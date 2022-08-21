@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Remora.Discord.API.Abstractions.Rest;
@@ -11,7 +12,7 @@ using Remora.Results;
 
 namespace RemoraShardHelper.Services;
 
-public class ShardedGatewayClient
+public class ShardedGatewayClient : IDisposable
 {
     private bool _isRunning;
     
@@ -23,7 +24,9 @@ public class ShardedGatewayClient
     private readonly ResponderDispatchService _responderDispatch;
     private readonly ILogger<ShardedGatewayClient> _logger;
     
-    private readonly Dictionary<int, DiscordGatewayClient> _gatewayClients = new();
+    private readonly ConcurrentDictionary<int, DiscordGatewayClient> _gatewayClients = new();
+    
+    public IReadOnlyDictionary<int, DiscordGatewayClient> Shards => _gatewayClients;
 
     public ShardedGatewayClient
     (
@@ -86,18 +89,24 @@ public class ShardedGatewayClient
             .Range(gatewayOptions.ShardIdentification?.ShardID ?? 0, startupShards)
             .Select
             (
-                s => new DiscordGatewayClient
-                (
-                    _gatewayAPI,
-                    _services.GetRequiredService<IPayloadTransportService>(),
-                    CloneOptions(gatewayOptions, s),
-                    _tokenStore,
-                    _random,
-                    _services.GetRequiredService<ILogger<DiscordGatewayClient>>(),
-                    _services,
-                    _responderDispatch
-                )
-            );
+                s =>
+                {
+                    var client = new DiscordGatewayClient
+                    (
+                        _gatewayAPI,
+                        _services.GetRequiredService<IPayloadTransportService>(),
+                        CloneOptions(gatewayOptions, s),
+                        _tokenStore,
+                        _random,
+                        _services.GetRequiredService<ILogger<DiscordGatewayClient>>(),
+                        _services,
+                        _responderDispatch
+                    );
+
+                    _gatewayClients[s] =  client;
+                    
+                    return client;
+                });
 
         var tasks = new List<Task<Result>>();
 
@@ -153,5 +162,13 @@ public class ShardedGatewayClient
         ret.MinimumSafetyMargin   = options.MinimumSafetyMargin;
 
         return Options.Create(ret);
+    }
+
+    public void Dispose()
+    {
+        foreach (var client in _gatewayClients.Values)
+        {
+            client.Dispose();
+        }
     }
 }
