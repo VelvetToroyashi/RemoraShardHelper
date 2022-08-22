@@ -18,10 +18,7 @@ public class ShardedGatewayClient : IDisposable
     
     private readonly IServiceProvider _services;
     private readonly IDiscordRestGatewayAPI _gatewayAPI;
-    private readonly IOptions<ShardedGatewayClientOptions> _gatewayOptions;
-    private readonly ITokenStore _tokenStore;
-    private readonly Random _random;
-    private readonly ResponderDispatchService _responderDispatch;
+    private readonly ShardedGatewayClientOptions _gatewayOptions;
     private readonly ILogger<ShardedGatewayClient> _logger;
     
     private readonly ConcurrentDictionary<int, DiscordGatewayClient> _gatewayClients = new();
@@ -33,18 +30,12 @@ public class ShardedGatewayClient : IDisposable
         IServiceProvider services,
         IDiscordRestGatewayAPI gatewayAPI,
         IOptions<ShardedGatewayClientOptions> gatewayOptions,
-        ITokenStore tokenStore,
-        Random random,
-        ResponderDispatchService responderDispatch,
         ILogger<ShardedGatewayClient> logger
     )
     {
         _services = services;
         _gatewayAPI = gatewayAPI;
-        _gatewayOptions = gatewayOptions;
-        _tokenStore = tokenStore;
-        _random = random;
-        _responderDispatch = responderDispatch;
+        _gatewayOptions = gatewayOptions.Value;
     }
 
     public async Task<Result> RunAsync(CancellationToken ct = default)
@@ -59,54 +50,43 @@ public class ShardedGatewayClient : IDisposable
             return (Result)gatewayResult;
         }
 
-        var gatewayOptions = _gatewayOptions.Value;
-        
         if (gatewayResult.Entity.Shards.IsDefined(out var shards))
         {
-            gatewayOptions.ShardsCount ??= shards;
+            _gatewayOptions.ShardsCount ??= shards;
         }
         
-        if (gatewayOptions.ShardIdentification is null && gatewayOptions.ShardsCount is {} shardCount)
+        if (_gatewayOptions.ShardIdentification is null && _gatewayOptions.ShardsCount is {} shardCount)
         {
-            gatewayOptions.ShardIdentification = new ShardIdentification(1, shardCount);
+            _gatewayOptions.ShardIdentification = new ShardIdentification(1, shardCount);
         }
         
-        var shardDelta = gatewayOptions.ShardIdentification?.ShardCount ?? 1 - (gatewayOptions.ShardIdentification?.ShardID ?? 1 + gatewayOptions.ShardsCount ?? 1);
+        var shardDelta = _gatewayOptions.ShardIdentification?.ShardCount ?? 1 - (_gatewayOptions.ShardIdentification?.ShardID ?? 1 + _gatewayOptions.ShardsCount ?? 1);
 
         if (shardDelta > 0)
         {
             _logger.LogWarning("The specified shard count exceeds the set or recommended shard count " +
                                "of {ShardCount}, and only {Shards} will be started.",
-                gatewayOptions.ShardIdentification.ShardCount, 
-                gatewayOptions.ShardIdentification.ShardCount - shardDelta);
+                _gatewayOptions.ShardIdentification.ShardCount, 
+                _gatewayOptions.ShardIdentification.ShardCount - shardDelta);
         }
         
-        var startupShards = gatewayOptions.ShardsCount ?? 1 - shardDelta;
+        var startupShards = _gatewayOptions.ShardsCount ?? 1 - shardDelta;
 
         var maxStartup = gatewayResult.Entity.SessionStartLimit.IsDefined(out var sessionLimit) ? sessionLimit.MaxConcurrency : 1;
 
         var clients = Enumerable
-            .Range(gatewayOptions.ShardIdentification?.ShardID ?? 0, startupShards)
+            .Range(_gatewayOptions.ShardIdentification?.ShardID ?? 0, startupShards)
             .Select
             (
                 s =>
                 {
-                    var client = new DiscordGatewayClient
-                    (
-                        _gatewayAPI,
-                        _services.GetRequiredService<IPayloadTransportService>(),
-                        CloneOptions(gatewayOptions, s),
-                        _tokenStore,
-                        _random,
-                        _services.GetRequiredService<ILogger<DiscordGatewayClient>>(),
-                        _services,
-                        _responderDispatch
-                    );
+                    var client = ActivatorUtilities.CreateInstance<DiscordGatewayClient>(_services, CloneOptions(_gatewayOptions, s));
 
                     _gatewayClients[s] =  client;
                     
                     return client;
-                });
+                }
+            );
 
         var tasks = new List<Task<Result>>();
 
