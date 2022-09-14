@@ -66,7 +66,7 @@ public class ShardedGatewayClient : IDisposable
             _gatewayOptions.ShardIdentification = new ShardIdentification(0, shardCount);
         }
         
-        var shardDelta = (_gatewayOptions.ShardIdentification?.ShardCount ?? 1) - ((_gatewayOptions.ShardIdentification?.ShardID ?? 0) + (_gatewayOptions.ShardsCount ?? 1));
+        var shardDelta = (_gatewayOptions.ShardIdentification?.ShardCount ?? _gatewayOptions.ShardsCount ?? 1) - ((_gatewayOptions.ShardIdentification?.ShardID ?? 0) + (_gatewayOptions.ShardsCount ?? 1));
 
         if (shardDelta > 0)
         {
