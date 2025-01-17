@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Remora.Discord.Gateway.Results;
 using Remora.Discord.Hosting.Options;
 
@@ -7,7 +8,7 @@ namespace RemoraShardHelper.Services;
 public class ShardedDiscordService
 (
     ShardedGatewayClient client,
-    DiscordServiceOptions options,
+    IOptions<DiscordServiceOptions> options,
     IHostApplicationLifetime lifetime
 )
 : BackgroundService
@@ -17,7 +18,7 @@ public class ShardedDiscordService
     {
         var runResult = await client.RunAsync(stoppingToken);
 
-        if (runResult.Error is GatewayError { IsCritical: true } && options.TerminateApplicationOnCriticalGatewayErrors)
+        if (runResult.Error is GatewayError { IsCritical: true } && options.Value.TerminateApplicationOnCriticalGatewayErrors)
         {
             lifetime.StopApplication();
         }

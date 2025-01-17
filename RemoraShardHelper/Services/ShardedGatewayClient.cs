@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,9 +22,10 @@ public class ShardedGatewayClient : IDisposable
 
     private readonly ConcurrentDictionary<int, DiscordGatewayClient> _gatewayClients = new();
 
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_connectionStatus")]
-    private static extern GatewayConnectionStatus GetClientConnectionStatus(DiscordGatewayClient client);
 
+    private static Func<DiscordGatewayClient, GatewayConnectionStatus> GetClientConnectionStatus = c => (GatewayConnectionStatus)typeof(DiscordGatewayClient)
+                                                                                                        .GetField("_connectionStatus", BindingFlags.NonPublic | BindingFlags.Instance)!
+                                                                                                        .GetValue(c)!;
     public IReadOnlyDictionary<int, DiscordGatewayClient> Shards => _gatewayClients;
 
     public ShardedGatewayClient

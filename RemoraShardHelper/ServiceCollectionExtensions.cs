@@ -8,13 +8,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDiscordSharding
     (
-        this IServiceCollection services, 
-        Func<IServiceProvider, string> tokenFactory, 
+        this IServiceCollection services,
+        Func<IServiceProvider, string> tokenFactory,
         Action<IHttpClientBuilder>? build = null
     )
     {
         services.AddDiscordGateway(tokenFactory, build);
-
+        services.AddSingleton<ShardedGatewayClient>();
         services.AddHostedService<ShardedDiscordService>();
 
         return services;
