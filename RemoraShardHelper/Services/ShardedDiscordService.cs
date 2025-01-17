@@ -4,19 +4,22 @@ using Remora.Discord.Hosting.Options;
 
 namespace RemoraShardHelper.Services;
 
-public class ShardedDiscordService : BackgroundService
+public class ShardedDiscordService
+(
+    ShardedGatewayClient client,
+    DiscordServiceOptions options,
+    IHostApplicationLifetime lifetime
+)
+: BackgroundService
 {
-    private readonly ShardedGatewayClient _client;
-    private readonly DiscordServiceOptions _options;
-    private readonly IHostApplicationLifetime _lifetime;
-    
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+
+    protected async override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var runResult = await _client.RunAsync(stoppingToken);
-        
-        if (runResult.Error is GatewayError { IsCritical: true } && _options.TerminateApplicationOnCriticalGatewayErrors)
+        var runResult = await client.RunAsync(stoppingToken);
+
+        if (runResult.Error is GatewayError { IsCritical: true } && options.TerminateApplicationOnCriticalGatewayErrors)
         {
-            _lifetime.StopApplication();
+            lifetime.StopApplication();
         }
     }
 }

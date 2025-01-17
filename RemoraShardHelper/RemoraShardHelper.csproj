@@ -10,6 +10,7 @@
     <Description>Adds support to Remora to handle multiple shards in the same process</Description>
     <PackageProjectUrl>https://github.com/VelvetToroyashi/RemoraShardHelper</PackageProjectUrl>
     <RepositoryUrl>https://github.com/VelvetToroyashi/RemoraShardHelper</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
