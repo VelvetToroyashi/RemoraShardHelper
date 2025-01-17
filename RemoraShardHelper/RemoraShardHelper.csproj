@@ -1,15 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <TargetFrameworks>net9.0;netstandard2.1</TargetFrameworks>
+    <PackageId>VTP.Remora.InProcessSharding</PackageId>
+    <Authors>Velvet Toroyashi</Authors>
+    <Description>Adds support to Remora to handle multiple shards in the same process</Description>
+    <PackageProjectUrl>https://github.com/VelvetToroyashi/RemoraShardHelper</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/VelvetToroyashi/RemoraShardHelper</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Remora.Discord.Gateway" Version="11.0.0" />
-    <PackageReference Include="Remora.Discord.Hosting" Version="5.0.28" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.1" />
+    <PackageReference Include="Remora.Discord.Gateway" Version="12.0.2" />
+    <PackageReference Include="Remora.Discord.Hosting" Version="6.0.10" />
   </ItemGroup>
 
 </Project>
