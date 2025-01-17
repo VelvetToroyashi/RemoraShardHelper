@@ -3,7 +3,8 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <TargetFrameworks>net9.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>12</LangVersion>
+    <TargetFrameworks>net9.0;net8.0</TargetFrameworks>
     <PackageId>VTP.Remora.InProcessSharding</PackageId>
     <Authors>Velvet Toroyashi</Authors>
     <Description>Adds support to Remora to handle multiple shards in the same process</Description>
